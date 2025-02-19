@@ -1,36 +1,38 @@
 ﻿using StackExchange.Redis;
+using Valuator.Services;
 
 namespace Valuator;
 
 public class Program
 {
-    public static void Main(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
-
-        // Add services to the container.
-        builder.Services.AddRazorPages();
-		builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-		{
-			var configuration = builder.Configuration.GetValue<string>("Redis:ConnectionString");
-			return ConnectionMultiplexer.Connect(configuration);
-		});
-
-		var app = builder.Build();
-
-        // Configure the HTTP request pipeline.
-        if (!app.Environment.IsDevelopment())
+        public static void Main(string[] args)
         {
-            app.UseExceptionHandler("/Error");
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Add services to the container.
+            builder.Services.AddRazorPages();
+		    builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+		    {
+			    var configuration = builder.Configuration.GetValue<string>("Redis:ConnectionString");
+			    return ConnectionMultiplexer.Connect(configuration);
+		    });
+            builder.Services.AddScoped<IStorageService, RedisStorageService>();
+
+		    var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Error");
+            }
+            app.UseStaticFiles();
+
+            app.UseRouting();
+
+            app.UseAuthorization();
+
+            app.MapRazorPages();
+
+            app.Run();
         }
-        app.UseStaticFiles();
-
-        app.UseRouting();
-
-        app.UseAuthorization();
-
-        app.MapRazorPages();
-
-        app.Run();
-    }
 }
