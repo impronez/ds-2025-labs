@@ -24,7 +24,12 @@ public class IndexModel : PageModel
     {
         _logger.LogDebug(text);
 
-        string id = Guid.NewGuid().ToString();
+        if (String.IsNullOrEmpty(text))
+        {
+			return Redirect("index");
+		}
+
+		string id = Guid.NewGuid().ToString();
 
 		string similarityKey = "SIMILARITY-" + id;
 		string similarity = HasDuplicates(text) ? "1" : "0";
