@@ -8,8 +8,9 @@
     <form method="post">
         <div class="col-2">Текст для оценки:</div>
         <div class="col-10">
-            <textarea name="text" rows="5" cols="50"></textarea>
-            <input type="submit" />
+            <textarea name="text" rows="5" cols="50"
+                oninput="document.getElementById('submit-btn').disabled = this.value.trim() === ''" ></textarea>
+            <input type="submit" disabled id="submit-btn" />
         </div>
     </form>
 </div>

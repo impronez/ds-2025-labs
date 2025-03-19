@@ -1,15 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Valuator.Services;
 
 namespace Valuator.Pages;
 
 public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
+    private readonly IStorageService _redisService;
 
-    public IndexModel(ILogger<IndexModel> logger)
+    public IndexModel(ILogger<IndexModel> logger, IStorageService redisService)
     {
         _logger = logger;
+        _redisService = redisService;
     }
 
     public void OnGet()
@@ -21,17 +24,35 @@ public class IndexModel : PageModel
     {
         _logger.LogDebug(text);
 
-        string id = Guid.NewGuid().ToString();
+        if (String.IsNullOrEmpty(text))
+        {
+			return Redirect("index");
+		}
 
-        string textKey = "TEXT-" + id;
-        // TODO: (pa1) сохранить в БД (Redis) text по ключу textKey
+		string id = Guid.NewGuid().ToString();
 
-        string rankKey = "RANK-" + id;
-        // TODO: (pa1) посчитать rank и сохранить в БД (Redis) по ключу rankKey
+		string similarityKey = "SIMILARITY-" + id;
+		string similarity = HasDuplicates(text) ? "1" : "0";
+		_redisService.SetValue(similarityKey, similarity);
 
-        string similarityKey = "SIMILARITY-" + id;
-        // TODO: (pa1) посчитать similarity и сохранить в БД (Redis) по ключу similarityKey
+		string textKey = "TEXT-" + id;
+        _redisService.SetValue(textKey, text);
 
-        return Redirect($"summary?id={id}");
+		string rankKey = "RANK-" + id;
+        _redisService.SetValue(rankKey, CalculateRank(text).ToString());       
+
+		return Redirect($"summary?id={id}");
+    }
+
+	private bool HasDuplicates(string text)
+    {
+        return _redisService
+            .GetAllValuesByKeyPrefix("TEXT")
+			.Exists(value => text == value);
+    }
+
+    private static double CalculateRank(string text)
+    {
+        return text.Count(ch => !char.IsLetter(ch)) / (double)text.Length;
     }
 }
