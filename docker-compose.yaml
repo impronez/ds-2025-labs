@@ -8,6 +8,8 @@ services:
       - app-network
 
   webapp1:
+    volumes:
+      - data-protection-keys:/root/.aspnet/DataProtection-Keys
     build:
       context: .
       dockerfile: Dockerfile
@@ -20,6 +22,8 @@ services:
       - app-network
 
   webapp2:
+    volumes:
+      - data-protection-keys:/root/.aspnet/DataProtection-Keys
     build:
       context: .
       dockerfile: Dockerfile
@@ -39,6 +43,9 @@ services:
       - "8080:8080"
     networks:
       - app-network
+
+volumes:
+  data-protection-keys:
 
 networks:
   app-network:
