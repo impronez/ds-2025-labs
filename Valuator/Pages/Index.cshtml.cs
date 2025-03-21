@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Valuator.Services;
+using Services;
+using Services.MessageBroker;
 
 namespace Valuator.Pages;
 
@@ -8,11 +9,13 @@ public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
     private readonly IStorageService _redisService;
-
-    public IndexModel(ILogger<IndexModel> logger, IStorageService redisService)
+    private readonly IMessageBrokerService _messageBrokerService;
+    
+    public IndexModel(ILogger<IndexModel> logger, IStorageService redisService, IMessageBrokerService messageBrokerService)
     {
         _logger = logger;
         _redisService = redisService;
+        _messageBrokerService = messageBrokerService;
     }
 
     public void OnGet()
@@ -20,7 +23,7 @@ public class IndexModel : PageModel
 
     }
 
-    public IActionResult OnPost(string text)
+    public async Task<IActionResult> OnPost(string text)
     {
         _logger.LogDebug(text);
 
@@ -33,13 +36,12 @@ public class IndexModel : PageModel
 
 		string similarityKey = "SIMILARITY-" + id;
 		string similarity = HasDuplicates(text) ? "1" : "0";
-		_redisService.SetValue(similarityKey, similarity);
+		_redisService.Save(similarityKey, similarity);
 
 		string textKey = "TEXT-" + id;
-        _redisService.SetValue(textKey, text);
+        _redisService.Save(textKey, text);
 
-		string rankKey = "RANK-" + id;
-        _redisService.SetValue(rankKey, CalculateRank(text).ToString());       
+        await _messageBrokerService.SendMessageAsync(RabbitMqService.RankCalculatorQueueName, id); 
 
 		return Redirect($"summary?id={id}");
     }
@@ -49,10 +51,5 @@ public class IndexModel : PageModel
         return _redisService
             .GetAllValuesByKeyPrefix("TEXT")
 			.Exists(value => text == value);
-    }
-
-    private static double CalculateRank(string text)
-    {
-        return text.Count(ch => !char.IsLetter(ch)) / (double)text.Length;
     }
 }

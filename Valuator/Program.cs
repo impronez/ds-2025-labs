@@ -1,19 +1,25 @@
 ﻿using StackExchange.Redis;
-using Valuator.Services;
+using Services;
+using Services.MessageBroker;
 
 namespace Valuator;
 
 public class Program
 {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var messageBrokerServiceConnectionString = Environment.GetEnvironmentVariable("RABBITMQ_HOSTNAME");
+            var messageBrokerService = await RabbitMqService.CreateAsync(messageBrokerServiceConnectionString);
+
+            builder.Services.AddSingleton<IMessageBrokerService>(_ => messageBrokerService);
+            
             // Add services to the container.
             builder.Services.AddRazorPages();
 		    builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 		    {
-			    var configuration = builder.Configuration.GetValue<string>("Redis:ConnectionString");
+			    var configuration = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
 			    return ConnectionMultiplexer.Connect(configuration);
 		    });
             builder.Services.AddScoped<IStorageService, RedisStorageService>();
