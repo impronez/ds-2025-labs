@@ -2,14 +2,16 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 WORKDIR /source
 
-COPY *.sln . 
-COPY Valuator/*.csproj ./Valuator/
+COPY ../*.sln .  
+COPY ./Services/*.csproj ./Services/
+COPY ./Valuator/*.csproj ./Valuator/
 
-RUN dotnet restore
+RUN dotnet restore Valuator/Valuator.csproj
 
+COPY ./Services/ ./Services/
 COPY Valuator/. ./Valuator/
 
-RUN dotnet publish -c release -o /app
+RUN dotnet publish Valuator/Valuator.csproj -c release -o /app
 
 RUN ls -l /app
 
