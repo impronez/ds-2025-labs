@@ -1,6 +1,6 @@
 ﻿using StackExchange.Redis;
 
-namespace Valuator.Services
+namespace Services
 {
 	public class RedisStorageService : IStorageService
 	{
@@ -11,7 +11,7 @@ namespace Valuator.Services
 			_database = redis.GetDatabase();
 		}
 
-		public void SetValue(string key, string value)
+		public void Save(string key, string value)
 		{
 			_database.StringSet(key, value);
 		}

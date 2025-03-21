@@ -1,8 +1,8 @@
-﻿namespace Valuator.Services
+﻿namespace Services
 {
 	public interface IStorageService
 	{
-		public void SetValue(string key, string value);
+		public void Save(string key, string value);
 		public string? GetValue(string key);
 		public List<string> GetAllValuesByKeyPrefix(string keyPrefix);
 	}
