@@ -11,7 +11,10 @@ public class Program
             var builder = WebApplication.CreateBuilder(args);
 
             var messageBrokerServiceConnectionString = Environment.GetEnvironmentVariable("RABBITMQ_HOSTNAME");
-            var messageBrokerService = await RabbitMqService.CreateAsync(messageBrokerServiceConnectionString);
+            var messageBrokerService = await RabbitMqService.CreateAsync(
+	            messageBrokerServiceConnectionString, 
+	            builder.Configuration.GetValue<string>("RankCalculatorRabbitMq:QueueName"),
+	            builder.Configuration.GetValue<string>("RankCalculatorRabbitMq:ExchangeName"));
 
             builder.Services.AddSingleton<IMessageBrokerService>(_ => messageBrokerService);
             
