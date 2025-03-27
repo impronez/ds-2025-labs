@@ -1,4 +1,5 @@
-﻿using Services;
+﻿using Microsoft.Extensions.Configuration;
+using Services;
 using Services.MessageBroker;
 using StackExchange.Redis;
 
@@ -8,6 +9,15 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .AddEnvironmentVariables()
+            .Build();
+        
+        string queueName = config.GetSection("RankCalculatorRabbitMq")["QueueName"];
+        string exchangeName = config.GetSection("RankCalculatorRabbitMq")["ExchangeName"];
+        
         var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
         var messageBrokerServiceConnectionString = Environment.GetEnvironmentVariable("RABBITMQ_HOSTNAME");
 
@@ -15,9 +25,9 @@ public class Program
 
         var rankCalculatorService = new RankCalculatorService(storageService);
 
-        var messageBroker =  await RabbitMqService.CreateAsync(messageBrokerServiceConnectionString);
+        var messageBroker =  await RabbitMqService.CreateAsync(messageBrokerServiceConnectionString, queueName, exchangeName);
         
-        await messageBroker.ReceiveMessageAsync(RabbitMqService.RankCalculatorQueueName, rankCalculatorService.Process);
+        await messageBroker.ReceiveMessageAsync(queueName, rankCalculatorService.Process);
 
         var exitEvent = new TaskCompletionSource<bool>();
         
