@@ -10,12 +10,18 @@ public class IndexModel : PageModel
     private readonly ILogger<IndexModel> _logger;
     private readonly IStorageService _redisService;
     private readonly IMessageBrokerService _messageBrokerService;
+    private readonly string _rankCalculatorMessageBrokerQueueName;
     
-    public IndexModel(ILogger<IndexModel> logger, IStorageService redisService, IMessageBrokerService messageBrokerService)
+    public IndexModel(
+	    ILogger<IndexModel> logger,
+	    IStorageService redisService,
+	    IMessageBrokerService messageBrokerService,
+	    IConfiguration configuration)
     {
         _logger = logger;
         _redisService = redisService;
         _messageBrokerService = messageBrokerService;
+        _rankCalculatorMessageBrokerQueueName = configuration["RankCalculator:QueueName"];
     }
 
     public void OnGet()
@@ -41,7 +47,7 @@ public class IndexModel : PageModel
 		string textKey = "TEXT-" + id;
         _redisService.Save(textKey, text);
 
-        await _messageBrokerService.SendMessageAsync(RabbitMqService.RankCalculatorQueueName, id); 
+        await _messageBrokerService.SendMessageAsync(_rankCalculatorMessageBrokerQueueName, id); 
 
 		return Redirect($"summary?id={id}");
     }
