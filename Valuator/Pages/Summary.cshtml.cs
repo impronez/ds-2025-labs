@@ -15,19 +15,37 @@ public class SummaryModel : PageModel
 
     public double Rank { get; set; }
     public double Similarity { get; set; }
+    
+    public string Error { get; set; }
 
     public void OnGet(string id)
     {
         _logger.LogDebug(id);
+        
+        var rankValue = _redisService.GetValue($"RANK-{id}");
+        var similarityValue = _redisService.GetValue($"SIMILARITY-{id}");
 
-        Rank = ParseDouble(_redisService.GetValue($"RANK-{id}"));
-        Similarity = ParseDouble(_redisService.GetValue($"SIMILARITY-{id}"));
+        if (!ParseValues(rankValue, similarityValue))
+            return;
+
+        Rank = double.Parse(rankValue!);
+        Similarity = double.Parse(similarityValue!);
     }
 
-    private static double ParseDouble(string? value)
+    private bool ParseValues(string? rankValue, string? similarityValue)
     {
-        if (string.IsNullOrEmpty(value)) return 0;
+        if (string.IsNullOrEmpty(rankValue))
+        {
+            Error = "Информация об оценке не найдена. Попробуйте перезагрузить страницу";
+            return false;
+        }
 
-        return double.Parse(value);
+        if (string.IsNullOrEmpty(similarityValue))
+        {
+            Error = "Информация о плагиате не найдена. Попробуйте перезагрузить страницу";
+            return false;
+        }
+
+        return true;
     }
 }

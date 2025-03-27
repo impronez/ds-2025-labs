@@ -2,5 +2,13 @@
 @model Valuator.Pages.SummaryModel
 @{
 }
-<p>Оценка содержания: @Model.Rank</p>
-<p>Плагиат: @Model.Similarity</p>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div>@Model.Error</div>
+}
+else
+{
+    <p>Оценка содержания: @Model.Rank</p>
+    <p>Плагиат: @Model.Similarity</p>
+}
