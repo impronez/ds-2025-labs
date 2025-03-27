@@ -10,16 +10,13 @@ public class RabbitMqService : IMessageBrokerService, IAsyncDisposable
     private readonly IConnection _connection;
     private readonly IChannel _channel;
     
-    public const string RankCalculatorExchangeName = "valuator.processing.rank";
-    public const string RankCalculatorQueueName = "valuator.processing.rank";
-    
     private RabbitMqService(IConnection connection, IChannel channel)
     {
         _connection = connection;
         _channel = channel;
     }
 
-    public static async Task<RabbitMqService> CreateAsync(string hostname)
+    public static async Task<RabbitMqService> CreateAsync(string hostname, string queueName, string exchangeName)
     {
         var retryPolicy = Policy
             .Handle<Exception>()
@@ -37,7 +34,7 @@ public class RabbitMqService : IMessageBrokerService, IAsyncDisposable
             var connection = await factory.CreateConnectionAsync();
             var channel = await connection.CreateChannelAsync();
 
-            await DeclareTopologyAsync(channel);
+            await DeclareTopologyAsync(channel, queueName, exchangeName);
 
             return new RabbitMqService(connection, channel);
         });
@@ -65,21 +62,21 @@ public class RabbitMqService : IMessageBrokerService, IAsyncDisposable
         await _channel.BasicConsumeAsync(queue: queueName, autoAck: false, consumer: consumer);
     }
     
-    private static async Task DeclareTopologyAsync(IChannel channel)
+    private static async Task DeclareTopologyAsync(IChannel channel, string queueName, string exchangeName)
     {
         await channel.ExchangeDeclareAsync(
-            exchange: RankCalculatorExchangeName,
+            exchange: exchangeName,
             type: ExchangeType.Direct
         );
         await channel.QueueDeclareAsync(
-            queue: RankCalculatorQueueName,
+            queue: queueName,
             durable: true,
             exclusive: false,
             autoDelete: false
         );
         await channel.QueueBindAsync(
-            queue: RankCalculatorQueueName,
-            exchange: RankCalculatorExchangeName,
+            queue: queueName,
+            exchange: exchangeName,
             routingKey: "");
     }
 
