@@ -26,6 +26,30 @@ services:
       - .env
     networks:
       - app-network
+    
+  events-logger1:
+    build:
+      context: .
+      dockerfile: EventsLogger/Dockerfile
+    depends_on:
+      - redis
+      - rabbitmq
+    env_file:
+      - .env
+    networks:
+      - app-network
+  
+  events-logger2:
+    build:
+      context: .
+      dockerfile: EventsLogger/Dockerfile
+    depends_on:
+      - redis
+      - rabbitmq
+    env_file:
+      - .env
+    networks:
+      - app-network
   
   webapp1:
     volumes:
