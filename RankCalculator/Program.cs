@@ -1,6 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Common.MessageBroker;
 using Services;
-using Services.MessageBroker;
 using StackExchange.Redis;
 
 namespace RankCalculator;
@@ -9,38 +8,44 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        var config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .AddEnvironmentVariables()
-            .Build();
+        var rankCalculatorRabbitMqQueueName = Environment.GetEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_QUEUE_NAME");
+        var rankCalculatorRabbitMqExchangeName = Environment.GetEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_EXCHANGE_NAME");
+        var rankCalculatorRoutingKey = Environment.GetEnvironmentVariable("RANK_CALCULATED_ROUTING_KEY");
         
-        string queueName = config.GetSection("RankCalculatorRabbitMq")["QueueName"];
-        string exchangeName = config.GetSection("RankCalculatorRabbitMq")["ExchangeName"];
+        var loggerRabbitMqExchangeName = Environment.GetEnvironmentVariable("LOGGER_RABBIT_MQ_EXCHANGE_NAME");
         
         var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
-        var messageBrokerServiceConnectionString = Environment.GetEnvironmentVariable("RABBITMQ_HOSTNAME");
-
-        var storageService = GetStorageService(redisConnectionString);
-
-        var rankCalculatorService = new RankCalculatorService(storageService);
-
-        var messageBroker =  await RabbitMqService.CreateAsync(messageBrokerServiceConnectionString, queueName, exchangeName);
+        var rabbitMqHostname = Environment.GetEnvironmentVariable("RABBITMQ_HOSTNAME");
         
-        await messageBroker.ReceiveMessageAsync(queueName, rankCalculatorService.Process);
+        // TODO: проверки
+        
+        var storageService = GetStorageService(redisConnectionString!);
 
+        var rabbitMqClient = await RabbitMqClient.CreateAsync(rabbitMqHostname!);
+        var rabbitMqService = new RankCalculatorRabbitMqService(rabbitMqClient, loggerRabbitMqExchangeName!, rankCalculatorRoutingKey!);
+        await rabbitMqService.DeclareTopologyAsync(rankCalculatorRabbitMqExchangeName!, rankCalculatorRabbitMqQueueName!);
+
+        var rankCalculatorService = new RankCalculatorService(storageService, rabbitMqService);
+
+        await rabbitMqService.ReceiveMessageAsync(rankCalculatorRabbitMqQueueName!, rankCalculatorService.Process);
+
+        await WaitForShutdownSignalAsync();
+
+        Console.WriteLine("Rank calculator service stopped");
+    }
+    
+    private static async Task WaitForShutdownSignalAsync()
+    {
         var exitEvent = new TaskCompletionSource<bool>();
         
-        Console.CancelKeyPress += (sender, e) =>
+        Console.CancelKeyPress += (_, e) =>
         {
-            Console.WriteLine("Stopping rank calculator service...");
+            Console.WriteLine("Stopping events logger service...");
             e.Cancel = true;
             exitEvent.SetResult(true);
         };
 
         await exitEvent.Task;
-
-        Console.WriteLine("Rank calculator service stopped");
     }
 
     private static RedisStorageService GetStorageService(string connectionString)

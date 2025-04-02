@@ -8,14 +8,16 @@ public class RankCalculatorService
     private const string RankPrefix = "RANK-";
     private const string TextPrefix = "TEXT-";
     
-    private IStorageService _storageService;
+    private readonly IStorageService _storageService;
+    private readonly RankCalculatorRabbitMqService _rabbitMqService;
 
-    public RankCalculatorService(IStorageService storageService)
+    public RankCalculatorService(IStorageService storageService, RankCalculatorRabbitMqService rabbitMqService)
     {
         _storageService = storageService;
+        _rabbitMqService = rabbitMqService;
     }
     
-    public void Process(string id)
+    public async Task Process(string id)
     {
         var text = _storageService.GetValue(TextPrefix + id);
         
@@ -23,6 +25,9 @@ public class RankCalculatorService
         var key = RankPrefix + id;
 
         SaveRank(key, rank);
+
+        var message = $"Id: {id}, rank: {rank}";
+        await _rabbitMqService.SendLogMessage(message);
     }
 
     private void SaveRank(string key, double value)

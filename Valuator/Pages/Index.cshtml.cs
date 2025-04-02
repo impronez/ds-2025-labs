@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Services;
-using Services.MessageBroker;
+using Valuator.Services;
 
 namespace Valuator.Pages;
 
@@ -11,6 +11,8 @@ public class IndexModel : PageModel
     private readonly IStorageService _redisService;
     private readonly IMessageBrokerService _messageBrokerService;
     private readonly string _rankCalculatorMessageBrokerQueueName;
+    private readonly string _loggerMessageBrokerExchangeName;
+    private readonly string _similarityCalculatedRoutingKey;
     
     public IndexModel(
 	    ILogger<IndexModel> logger,
@@ -21,7 +23,9 @@ public class IndexModel : PageModel
         _logger = logger;
         _redisService = redisService;
         _messageBrokerService = messageBrokerService;
-        _rankCalculatorMessageBrokerQueueName = configuration["RankCalculator:QueueName"];
+        _rankCalculatorMessageBrokerQueueName = Environment.GetEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_QUEUE_NAME");
+        _loggerMessageBrokerExchangeName = Environment.GetEnvironmentVariable("LOGGER_RABBIT_MQ_EXCHANGE_NAME");
+        _similarityCalculatedRoutingKey = Environment.GetEnvironmentVariable("SIMILARITY_CALCULATED_ROUTING_KEY");
     }
 
     public void OnGet()
@@ -38,16 +42,19 @@ public class IndexModel : PageModel
 			return Redirect("index");
 		}
 
-		string id = Guid.NewGuid().ToString();
+		var id = Guid.NewGuid().ToString();
 
-		string similarityKey = "SIMILARITY-" + id;
-		string similarity = HasDuplicates(text) ? "1" : "0";
+		var similarityKey = "SIMILARITY-" + id;
+		var similarity = HasDuplicates(text) ? "1" : "0";
 		_redisService.Save(similarityKey, similarity);
 
-		string textKey = "TEXT-" + id;
+		var textKey = "TEXT-" + id;
         _redisService.Save(textKey, text);
+        
+        await _messageBrokerService.SendMessageAsync(string.Empty, _rankCalculatorMessageBrokerQueueName, id);
 
-        await _messageBrokerService.SendMessageAsync(_rankCalculatorMessageBrokerQueueName, id); 
+        var message = $"Id: {id}, similarity: {similarity}";
+        await _messageBrokerService.SendMessageAsync(_loggerMessageBrokerExchangeName, _similarityCalculatedRoutingKey, message);
 
 		return Redirect($"summary?id={id}");
     }

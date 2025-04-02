@@ -1,6 +1,7 @@
-﻿using StackExchange.Redis;
+﻿using Common.MessageBroker;
+using StackExchange.Redis;
 using Services;
-using Services.MessageBroker;
+using Valuator.Services;
 
 namespace Valuator;
 
@@ -8,23 +9,17 @@ public class Program
 {
         public static async Task Main(string[] args)
         {
+	        var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
+	        
             var builder = WebApplication.CreateBuilder(args);
 
-            var messageBrokerServiceConnectionString = Environment.GetEnvironmentVariable("RABBITMQ_HOSTNAME");
-            var messageBrokerService = await RabbitMqService.CreateAsync(
-	            messageBrokerServiceConnectionString, 
-	            builder.Configuration.GetValue<string>("RankCalculatorRabbitMq:QueueName"),
-	            builder.Configuration.GetValue<string>("RankCalculatorRabbitMq:ExchangeName"));
+            var rabbitMqService = await GetRabbitMqServiceAsync();
 
-            builder.Services.AddSingleton<IMessageBrokerService>(_ => messageBrokerService);
+            builder.Services.AddSingleton<IMessageBrokerService>(_ => rabbitMqService);
             
             // Add services to the container.
-            builder.Services.AddRazorPages();
-		    builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-		    {
-			    var configuration = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
-			    return ConnectionMultiplexer.Connect(configuration);
-		    });
+            builder.Services.AddRazorPages();	
+		    builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString!));
             builder.Services.AddScoped<IStorageService, RedisStorageService>();
 
 		    var app = builder.Build();
@@ -43,5 +38,20 @@ public class Program
             app.MapRazorPages();
 
             app.Run();
+        }
+
+        private static async Task<ValuatorRabbitMqService> GetRabbitMqServiceAsync()
+        {
+	        var rabbitMqHostname = Environment.GetEnvironmentVariable("RABBITMQ_HOSTNAME");
+	        var rankCalculatorRabbitMqQueueName = Environment.GetEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_QUEUE_NAME");
+	        var rankCalculatorRabbitMqExchangeName = Environment.GetEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_EXCHANGE_NAME");
+            
+	        var loggerRabbitMqExchangeName = Environment.GetEnvironmentVariable("LOGGER_RABBIT_MQ_EXCHANGE_NAME");
+
+	        var rabbitMqClient = await RabbitMqClient.CreateAsync(rabbitMqHostname!);
+	        var rabbitMqService = new ValuatorRabbitMqService(rabbitMqClient, loggerRabbitMqExchangeName!);
+	        await rabbitMqService.DeclareTopologyAsync(rankCalculatorRabbitMqExchangeName!, rankCalculatorRabbitMqQueueName!);
+
+	        return rabbitMqService;
         }
 }
