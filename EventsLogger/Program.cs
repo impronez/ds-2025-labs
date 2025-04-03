@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using Common.MessageBroker;
-using Polly;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -12,15 +11,17 @@ class Program
     {
         var rabbitMqHostname = Environment.GetEnvironmentVariable("RABBITMQ_HOSTNAME");
         var loggerRabbitMqExchangeName = Environment.GetEnvironmentVariable("LOGGER_RABBIT_MQ_EXCHANGE_NAME");
+        var loggerRabbitMqQueueName = Environment.GetEnvironmentVariable("LOGGER_RABBIT_MQ_QUEUE_NAME");
         
         var rankCalculatedRoutingKey = Environment.GetEnvironmentVariable("RANK_CALCULATED_ROUTING_KEY");
         var similarityCalculatedRoutingKey = Environment.GetEnvironmentVariable("SIMILARITY_CALCULATED_ROUTING_KEY");
 
-        // TODO: проверки
-        
         var rabbitMqClient = await RabbitMqClient.CreateAsync(rabbitMqHostname!);
         
-        await InitializeRabbitMqChannel(rabbitMqClient, loggerRabbitMqExchangeName!, [rankCalculatedRoutingKey!, similarityCalculatedRoutingKey!]);
+        await InitializeRabbitMqChannel(rabbitMqClient,
+            loggerRabbitMqExchangeName!,
+            loggerRabbitMqQueueName!, 
+            [rankCalculatedRoutingKey!, similarityCalculatedRoutingKey!]);
         
         await WaitForShutdownSignalAsync();
         Console.WriteLine("Events logger service stopped");
@@ -29,12 +30,12 @@ class Program
     private static async Task InitializeRabbitMqChannel(
         RabbitMqClient rabbitMqClient,
         string exchangeName,
+        string queueName,
         string[] routingKeys)
     {
         await rabbitMqClient.Channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Direct);
         
-        var queueDeclareResult = await rabbitMqClient.Channel.QueueDeclareAsync();
-        var queueName = queueDeclareResult.QueueName;
+        await rabbitMqClient.Channel.QueueDeclareAsync(queueName, exclusive: false);
 
         foreach (var routingKey in routingKeys)
         {
