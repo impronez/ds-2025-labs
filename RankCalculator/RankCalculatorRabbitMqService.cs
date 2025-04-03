@@ -1,7 +1,7 @@
 using System.Text;
-using Common.MessageBroker;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Services.MessageBroker;
 
 namespace RankCalculator;
 
@@ -10,25 +10,22 @@ public class RankCalculatorRabbitMqService : IAsyncDisposable
     private readonly string _loggerExchangeName;
     
     private readonly RabbitMqClient _rabbitMqClient;
-    private readonly string _rankCalculatingEventRoutingKey;
 
     public RankCalculatorRabbitMqService(
         RabbitMqClient rabbitMqClient,
-        string loggerExchangeName,
-        string rankCalculatingEventRoutingKey)
+        string loggerExchangeName)
     {
         _rabbitMqClient = rabbitMqClient;
         _loggerExchangeName = loggerExchangeName;
-        _rankCalculatingEventRoutingKey = rankCalculatingEventRoutingKey;
     }
 
-    public async Task SendLogMessage(string message)
+    public async Task SendMessageAsync(string exchangeName, string routingKey, string message)
     {
         var body = Encoding.UTF8.GetBytes(message);
         
         await _rabbitMqClient.Channel.BasicPublishAsync(
-            exchange: _loggerExchangeName,
-            routingKey: _rankCalculatingEventRoutingKey,
+            exchange: exchangeName,
+            routingKey: routingKey,
             body: body);
     }
 

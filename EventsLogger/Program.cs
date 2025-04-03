@@ -1,7 +1,8 @@
 ﻿using System.Text;
-using Common.MessageBroker;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Services.Common;
+using Services.MessageBroker;
 
 namespace EventsLogger;
 
@@ -9,21 +10,16 @@ class Program
 {
     static async Task Main()
     {
-        var rabbitMqHostname = Environment.GetEnvironmentVariable("RABBITMQ_HOSTNAME");
-        var loggerRabbitMqExchangeName = Environment.GetEnvironmentVariable("LOGGER_RABBIT_MQ_EXCHANGE_NAME");
-        var loggerRabbitMqQueueName = Environment.GetEnvironmentVariable("LOGGER_RABBIT_MQ_QUEUE_NAME");
-        
-        var rankCalculatedRoutingKey = Environment.GetEnvironmentVariable("RANK_CALCULATED_ROUTING_KEY");
-        var similarityCalculatedRoutingKey = Environment.GetEnvironmentVariable("SIMILARITY_CALCULATED_ROUTING_KEY");
+        var config = new EnvironmentConfiguration();
 
-        var rabbitMqClient = await RabbitMqClient.CreateAsync(rabbitMqHostname!);
+        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname);
         
         await DeclareTopologyAsync(rabbitMqClient,
-            loggerRabbitMqExchangeName!,
-            loggerRabbitMqQueueName!, 
-            [rankCalculatedRoutingKey!, similarityCalculatedRoutingKey!]);
+            config.LoggerRabbitMqExchangeName,
+            config.LoggerRabbitMqQueueName, 
+            [config.RankCalculatedRoutingKey, config.SimilarityCalculatedRoutingKey]);
 
-        await ReceiveMessageAsync(rabbitMqClient, loggerRabbitMqQueueName!);
+        await ReceiveMessageAsync(rabbitMqClient, config.LoggerRabbitMqQueueName);
         
         await WaitForShutdownSignalAsync();
         Console.WriteLine("Events logger service stopped");

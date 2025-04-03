@@ -1,33 +1,25 @@
-﻿using Common.MessageBroker;
-using Services;
+﻿using Services.Common;
+using Services.MessageBroker;
+using Services.Storage;
 using StackExchange.Redis;
 
 namespace RankCalculator;
 
 public class Program
 {
-    public static async Task Main(string[] args)
+    public static async Task Main()
     {
-        var rankCalculatorRabbitMqQueueName = Environment.GetEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_QUEUE_NAME");
-        var rankCalculatorRabbitMqExchangeName = Environment.GetEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_EXCHANGE_NAME");
-        var rankCalculatorRoutingKey = Environment.GetEnvironmentVariable("RANK_CALCULATED_ROUTING_KEY");
+        var config = new EnvironmentConfiguration();
         
-        var loggerRabbitMqExchangeName = Environment.GetEnvironmentVariable("LOGGER_RABBIT_MQ_EXCHANGE_NAME");
-        
-        var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
-        var rabbitMqHostname = Environment.GetEnvironmentVariable("RABBITMQ_HOSTNAME");
-        
-        // TODO: проверки
-        
-        var storageService = GetStorageService(redisConnectionString!);
+        var storageService = GetStorageService(config.RedisConnectionString);
 
-        var rabbitMqClient = await RabbitMqClient.CreateAsync(rabbitMqHostname!);
-        var rabbitMqService = new RankCalculatorRabbitMqService(rabbitMqClient, loggerRabbitMqExchangeName!, rankCalculatorRoutingKey!);
-        await rabbitMqService.DeclareTopologyAsync(rankCalculatorRabbitMqExchangeName!, rankCalculatorRabbitMqQueueName!);
+        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname);
+        var rabbitMqService = new RankCalculatorRabbitMqService(rabbitMqClient, config.LoggerRabbitMqExchangeName);
+        await rabbitMqService.DeclareTopologyAsync(config.RankCalculatorRabbitMqExchangeName, config.RankCalculatorRabbitMqQueueName);
 
-        var rankCalculatorService = new RankCalculatorService(storageService, rabbitMqService);
+        var rankCalculatorService = new RankCalculatorService(storageService, rabbitMqService, config);
 
-        await rabbitMqService.ReceiveMessageAsync(rankCalculatorRabbitMqQueueName!, rankCalculatorService.Process);
+        await rabbitMqService.ReceiveMessageAsync(config.RankCalculatorRabbitMqQueueName, rankCalculatorService.Process);
 
         await WaitForShutdownSignalAsync();
 

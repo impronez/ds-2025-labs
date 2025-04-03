@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Services;
+using Services.Common;
+using Services.Storage;
 using Valuator.Services;
 
 namespace Valuator.Pages;
@@ -10,22 +11,19 @@ public class IndexModel : PageModel
     private readonly ILogger<IndexModel> _logger;
     private readonly IStorageService _redisService;
     private readonly IMessageBrokerService _messageBrokerService;
-    private readonly string _rankCalculatorMessageBrokerQueueName;
-    private readonly string _loggerMessageBrokerExchangeName;
-    private readonly string _similarityCalculatedRoutingKey;
+    private readonly EnvironmentConfiguration _envConfig;
     
     public IndexModel(
 	    ILogger<IndexModel> logger,
 	    IStorageService redisService,
 	    IMessageBrokerService messageBrokerService,
-	    IConfiguration configuration)
+	    IConfiguration configuration,
+	    EnvironmentConfiguration environmentConfiguration)
     {
         _logger = logger;
         _redisService = redisService;
         _messageBrokerService = messageBrokerService;
-        _rankCalculatorMessageBrokerQueueName = Environment.GetEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_QUEUE_NAME");
-        _loggerMessageBrokerExchangeName = Environment.GetEnvironmentVariable("LOGGER_RABBIT_MQ_EXCHANGE_NAME");
-        _similarityCalculatedRoutingKey = Environment.GetEnvironmentVariable("SIMILARITY_CALCULATED_ROUTING_KEY");
+        _envConfig = environmentConfiguration;
     }
 
     public void OnGet()
@@ -51,10 +49,10 @@ public class IndexModel : PageModel
 		var textKey = "TEXT-" + id;
         _redisService.Save(textKey, text);
         
-        await _messageBrokerService.SendMessageAsync(string.Empty, _rankCalculatorMessageBrokerQueueName, id);
+        await _messageBrokerService.SendMessageAsync(string.Empty, _envConfig.RankCalculatorRabbitMqQueueName, id);
 
         var message = $"Id: {id}, similarity: {similarity}";
-        await _messageBrokerService.SendMessageAsync(_loggerMessageBrokerExchangeName, _similarityCalculatedRoutingKey, message);
+        await _messageBrokerService.SendMessageAsync(_envConfig.LoggerRabbitMqExchangeName, _envConfig.SimilarityCalculatedRoutingKey, message);
 
 		return Redirect($"summary?id={id}");
     }
