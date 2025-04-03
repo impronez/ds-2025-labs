@@ -18,16 +18,18 @@ class Program
 
         var rabbitMqClient = await RabbitMqClient.CreateAsync(rabbitMqHostname!);
         
-        await InitializeRabbitMqChannel(rabbitMqClient,
+        await DeclareTopologyAsync(rabbitMqClient,
             loggerRabbitMqExchangeName!,
             loggerRabbitMqQueueName!, 
             [rankCalculatedRoutingKey!, similarityCalculatedRoutingKey!]);
+
+        await ReceiveMessageAsync(rabbitMqClient, loggerRabbitMqQueueName!);
         
         await WaitForShutdownSignalAsync();
         Console.WriteLine("Events logger service stopped");
     }
 
-    private static async Task InitializeRabbitMqChannel(
+    private static async Task DeclareTopologyAsync(
         RabbitMqClient rabbitMqClient,
         string exchangeName,
         string queueName,
@@ -41,7 +43,12 @@ class Program
         {
             await rabbitMqClient.Channel.QueueBindAsync(queueName, exchangeName, routingKey);
         }
-        
+    }
+
+    private static async Task ReceiveMessageAsync(
+        RabbitMqClient rabbitMqClient,
+        string queueName)
+    {
         var consumer = new AsyncEventingBasicConsumer(rabbitMqClient.Channel);
         consumer.ReceivedAsync += (_, ea) =>
         {
