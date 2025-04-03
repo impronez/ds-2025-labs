@@ -1,29 +1,55 @@
+﻿using StackExchange.Redis;
+using Services;
+using Services.Common;
+using Services.MessageBroker;
+using Services.Storage;
+using Valuator.Services;
+
 namespace Valuator;
 
 public class Program
 {
-    public static void Main(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
-
-        // Add services to the container.
-        builder.Services.AddRazorPages();
-
-        var app = builder.Build();
-
-        // Configure the HTTP request pipeline.
-        if (!app.Environment.IsDevelopment())
+        public static async Task Main(string[] args)
         {
-            app.UseExceptionHandler("/Error");
+	        var config = new EnvironmentConfiguration();
+	        
+            var builder = WebApplication.CreateBuilder(args);
+
+            var rabbitMqService = await GetRabbitMqServiceAsync(config);
+
+            builder.Services.AddSingleton(config);
+
+            builder.Services.AddSingleton<IMessageBrokerService>(_ => rabbitMqService);
+            
+            // Add services to the container.
+            builder.Services.AddRazorPages();	
+		    builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(config.RedisConnectionString));
+            builder.Services.AddScoped<IStorageService, RedisStorageService>();
+
+		    var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Error");
+            }
+            app.UseStaticFiles();
+
+            app.UseRouting();
+
+            app.UseAuthorization();
+
+            app.MapRazorPages();
+
+            app.Run();
         }
-        app.UseStaticFiles();
 
-        app.UseRouting();
+        private static async Task<ValuatorRabbitMqService> GetRabbitMqServiceAsync(EnvironmentConfiguration config)
+        {
+	        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname);
+	        var rabbitMqService = new ValuatorRabbitMqService(rabbitMqClient, config.LoggerRabbitMqExchangeName);
+	        await rabbitMqService.DeclareTopologyAsync(config.RankCalculatorRabbitMqExchangeName, config.RankCalculatorRabbitMqQueueName);
 
-        app.UseAuthorization();
-
-        app.MapRazorPages();
-
-        app.Run();
-    }
+	        return rabbitMqService;
+        }
 }
