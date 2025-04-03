@@ -1,5 +1,6 @@
 using System.Globalization;
-using Services;
+using Services.Common;
+using Services.Storage;
 
 namespace RankCalculator;
 
@@ -8,13 +9,18 @@ public class RankCalculatorService
     private const string RankPrefix = "RANK-";
     private const string TextPrefix = "TEXT-";
     
+    private readonly EnvironmentConfiguration _envConfig;
     private readonly IStorageService _storageService;
     private readonly RankCalculatorRabbitMqService _rabbitMqService;
 
-    public RankCalculatorService(IStorageService storageService, RankCalculatorRabbitMqService rabbitMqService)
+    public RankCalculatorService(
+        IStorageService storageService, 
+        RankCalculatorRabbitMqService rabbitMqService,
+        EnvironmentConfiguration envConfig)
     {
         _storageService = storageService;
         _rabbitMqService = rabbitMqService;
+        _envConfig = envConfig;
     }
     
     public async Task Process(string id)
@@ -27,7 +33,10 @@ public class RankCalculatorService
         SaveRank(key, rank);
 
         var message = $"Id: {id}, rank: {rank}";
-        await _rabbitMqService.SendLogMessage(message);
+        await _rabbitMqService.SendMessageAsync(
+            _envConfig.LoggerRabbitMqExchangeName,
+            _envConfig.RankCalculatedRoutingKey,
+            message);
     }
 
     private void SaveRank(string key, double value)
