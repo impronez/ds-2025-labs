@@ -1,6 +1,6 @@
 using System.Text;
-using Common.MessageBroker;
 using RabbitMQ.Client;
+using Services.MessageBroker;
 
 namespace Valuator.Services;
 
