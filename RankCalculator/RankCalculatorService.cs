@@ -8,13 +8,13 @@ public class RankCalculatorService
 {
     private const string RankPrefix = "RANK-";
     private const string TextPrefix = "TEXT-";
-    
+
     private readonly EnvironmentConfiguration _envConfig;
     private readonly IStorageService _storageService;
     private readonly RankCalculatorRabbitMqService _rabbitMqService;
 
     public RankCalculatorService(
-        IStorageService storageService, 
+        IStorageService storageService,
         RankCalculatorRabbitMqService rabbitMqService,
         EnvironmentConfiguration envConfig)
     {
@@ -22,11 +22,11 @@ public class RankCalculatorService
         _rabbitMqService = rabbitMqService;
         _envConfig = envConfig;
     }
-    
+
     public async Task Process(string id)
     {
         var text = _storageService.GetValue(TextPrefix + id);
-        
+
         var rank = CalculateRank(text);
         var key = RankPrefix + id;
 
@@ -41,13 +41,14 @@ public class RankCalculatorService
 
     private void SaveRank(string key, double value)
     {
-        _storageService.Save(key, value.ToString(CultureInfo.InvariantCulture));
+        Task.Delay(2000).ContinueWith(_ =>
+            _storageService.Save(key, value.ToString(CultureInfo.InvariantCulture)));
     }
-    
+
     private static double CalculateRank(string? text)
     {
         if (string.IsNullOrEmpty(text)) return 0;
-        
+
         return text.Count(ch => !char.IsLetter(ch)) / (double)text.Length;
     }
 }
