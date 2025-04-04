@@ -1,4 +1,4 @@
-namespace Valuator.Services;
+namespace Valuator.Services.MessageBrokerService;
 
 public interface IMessageBrokerService
 {

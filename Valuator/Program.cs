@@ -1,9 +1,8 @@
 ﻿using StackExchange.Redis;
-using Services;
 using Services.Common;
 using Services.MessageBroker;
 using Services.Storage;
-using Valuator.Services;
+using Valuator.Services.MessageBrokerService;
 
 namespace Valuator;
 

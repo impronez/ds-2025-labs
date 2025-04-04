@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Services.Common;
 using Services.Storage;
-using Valuator.Services;
+using Valuator.Services.MessageBrokerService;
 
 namespace Valuator.Pages;
 

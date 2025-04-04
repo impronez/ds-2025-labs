@@ -2,7 +2,7 @@ using System.Text;
 using RabbitMQ.Client;
 using Services.MessageBroker;
 
-namespace Valuator.Services;
+namespace Valuator.Services.MessageBrokerService;
 
 public class ValuatorRabbitMqService : IMessageBrokerService, IAsyncDisposable
 {
