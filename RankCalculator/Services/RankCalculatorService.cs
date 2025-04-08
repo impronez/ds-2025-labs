@@ -2,7 +2,7 @@ using System.Globalization;
 using Services.Common;
 using Services.Storages;
 
-namespace RankCalculator;
+namespace RankCalculator.Services;
 
 public class RankCalculatorService
 {

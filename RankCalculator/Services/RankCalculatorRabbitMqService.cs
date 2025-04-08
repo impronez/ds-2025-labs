@@ -3,7 +3,7 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.MessageBrokers;
 
-namespace RankCalculator;
+namespace RankCalculator.Services;
 
 public class RankCalculatorRabbitMqService : IAsyncDisposable
 {
