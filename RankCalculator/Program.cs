@@ -1,3 +1,4 @@
+using RankCalculator.Hubs;
 using RankCalculator.Services;
 using Services.Common;
 using Services.MessageBrokers;
@@ -20,7 +21,11 @@ builder.Services.AddSingleton<RankCalculatorService>();
 
 builder.Services.AddHostedService<RankCalculationMessageProcessor>();
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
+
+app.MapHub<RankProcessingHub>("/rankHub");
 app.Run();
 
 static async Task<RankCalculatorRabbitMqService> CreateRankCalculatorRabbitMqServiceAsync(EnvironmentConfiguration configuration)
