@@ -1,6 +1,6 @@
 ﻿using StackExchange.Redis;
 
-namespace Services.Storage
+namespace Services.Storages
 {
 	public class RedisStorageService : IStorageService
 	{

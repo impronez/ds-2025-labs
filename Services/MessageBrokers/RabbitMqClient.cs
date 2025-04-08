@@ -1,7 +1,7 @@
 using Polly;
 using RabbitMQ.Client;
 
-namespace Services.MessageBroker;
+namespace Services.MessageBrokers;
 
 public class RabbitMqClient : IAsyncDisposable
 {
