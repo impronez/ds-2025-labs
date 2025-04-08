@@ -1,6 +1,6 @@
 using System.Globalization;
 using Services.Common;
-using Services.Storage;
+using Services.Storages;
 
 namespace RankCalculator;
 

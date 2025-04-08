@@ -1,6 +1,6 @@
 ﻿using Services.Common;
-using Services.MessageBroker;
-using Services.Storage;
+using Services.MessageBrokers;
+using Services.Storages;
 using StackExchange.Redis;
 
 namespace RankCalculator;

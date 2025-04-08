@@ -1,7 +1,7 @@
 using System.Text;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Services.MessageBroker;
+using Services.MessageBrokers;
 
 namespace RankCalculator;
 

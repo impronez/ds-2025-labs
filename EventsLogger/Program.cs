@@ -2,7 +2,7 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.Common;
-using Services.MessageBroker;
+using Services.MessageBrokers;
 
 namespace EventsLogger;
 

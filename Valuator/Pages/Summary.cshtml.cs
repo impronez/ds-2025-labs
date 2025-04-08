@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
-using Services;
-using Services.Storage;
+using Services.Storages;
 
 namespace Valuator.Pages;
 public class SummaryModel : PageModel
