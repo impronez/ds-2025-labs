@@ -1,14 +1,50 @@
 ﻿@page
 @model Valuator.Pages.SummaryModel
 @{
+    var isRankReady = Model.Rank != null;
 }
 
-@if (!string.IsNullOrEmpty(Model.Error))
-{
-    <div>@Model.Error</div>
-}
-else
-{
-    <p>Оценка содержания: @Model.Rank</p>
-    <p>Плагиат: @Model.Similarity</p>
+<p>Оценка содержания: <span id="rank">@Model.Rank</span></p>
+<p>Плагиат: @Model.Similarity</p>
+
+@section Scripts {
+    @if (!isRankReady)
+    {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+        <script>
+            (function () {
+                const id = "@Model.Id";
+                const rankEl = document.getElementById("rank");
+                rankEl.innerText = "загрузка...";
+
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl("http://localhost:8080/rankHub")
+                    .configureLogging(signalR.LogLevel.Information)
+                    .build();
+
+                connection.on("RankCalculated", function (data) {
+                    if (data.id === id) {
+                        console.log("Получен rank:", data.rank);
+                        rankEl.innerText = data.rank;
+                        connection.stop();
+                        console.log("Отключено");
+                    }
+                });
+
+                connection.start()
+                    .then(() => {
+                        console.log("Подключено");
+                        connection.invoke("JoinGroup", id);
+                    })
+                    .catch(err => console.error("Ошибка подключения:", err.toString()));
+
+                setTimeout(() => {
+                    if (rankEl.innerText === "загрузка...") {
+                        console.warn("Rank не получен за 10 секунд, перезагрузка...");
+                        location.reload();
+                    }
+                }, 10000);
+            })();
+        </script>
+    }
 }
