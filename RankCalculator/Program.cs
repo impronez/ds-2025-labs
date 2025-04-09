@@ -21,12 +21,25 @@ builder.Services.AddSingleton<RankCalculatorService>();
 
 builder.Services.AddHostedService<RankCalculationMessageProcessor>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:8080")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 builder.Services.AddSignalR();
 
 var app = builder.Build();
 
 app.MapHub<RankProcessingHub>("/rankHub");
-app.Run();
+app.UseCors();
+
+app.Run("http://0.0.0.0:5003"); 
 
 static async Task<RankCalculatorRabbitMqService> CreateRankCalculatorRabbitMqServiceAsync(EnvironmentConfiguration configuration)
 {
