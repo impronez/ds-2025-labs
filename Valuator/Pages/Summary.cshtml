@@ -24,16 +24,14 @@
 
                 connection.on("RankCalculated", function (data) {
                     if (data.id === id) {
-                        console.log("Получен rank:", data.rank);
+                        console.log("Received rank:", data.rank);
                         rankEl.innerText = data.rank;
                         connection.stop();
-                        console.log("Отключено");
                     }
                 });
 
                 connection.start()
                     .then(() => {
-                        console.log("Подключено");
                         connection.invoke("JoinGroup", id);
                     })
                     .catch(err => console.error("Ошибка подключения:", err.toString()));
