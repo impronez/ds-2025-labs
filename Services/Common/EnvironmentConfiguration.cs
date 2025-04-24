@@ -3,17 +3,15 @@ namespace Services.Common;
 public class EnvironmentConfiguration
 {
     public string RabbitMqHostname { get; }
-    public string RedisConnectionString { get; }
     public string RankCalculatorRabbitMqQueueName { get; }
     public string RankCalculatorRabbitMqExchangeName { get; }
     public string LoggerRabbitMqExchangeName { get; }
     public string LoggerRabbitMqQueueName { get; }
     public string RankCalculatedRoutingKey { get; }
     public string SimilarityCalculatedRoutingKey { get; }
-
+    
     public EnvironmentConfiguration()
     {
-        RedisConnectionString = GetRequiredEnvironmentVariable("REDIS_CONNECTION_STRING");
         RabbitMqHostname = GetRequiredEnvironmentVariable("RABBITMQ_HOSTNAME");
         
         RankCalculatorRabbitMqQueueName = GetRequiredEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_QUEUE_NAME");
@@ -23,6 +21,19 @@ public class EnvironmentConfiguration
         
         RankCalculatedRoutingKey = GetRequiredEnvironmentVariable("RANK_CALCULATED_ROUTING_KEY");
         SimilarityCalculatedRoutingKey = GetRequiredEnvironmentVariable("SIMILARITY_CALCULATED_ROUTING_KEY");
+    }
+
+    public static string GetRedisConnectionString(string shardKey)
+    {
+        var variableName = $"REDIS_{shardKey.ToUpper()}_CONNECTION_STRING";
+        
+        var value = Environment.GetEnvironmentVariable(variableName);
+        if (string.IsNullOrEmpty(value))
+        {
+            throw new Exception($"No connection string found for shard {shardKey}");
+        }
+        
+        return value;
     }
     
     private static string GetRequiredEnvironmentVariable(string variableName)
