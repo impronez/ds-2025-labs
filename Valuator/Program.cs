@@ -1,5 +1,4 @@
 ﻿using StackExchange.Redis;
-using Services;
 using Services.Common;
 using Services.MessageBroker;
 using Services.Storage;
@@ -15,41 +14,42 @@ public class Program
 	        
             var builder = WebApplication.CreateBuilder(args);
 
-            var rabbitMqService = await GetRabbitMqServiceAsync(config);
+        var rabbitMqService = await GetRabbitMqServiceAsync(config);
 
-            builder.Services.AddSingleton(config);
+        builder.Services.AddSingleton(config);
 
-            builder.Services.AddSingleton<IMessageBrokerService>(_ => rabbitMqService);
-            
-            // Add services to the container.
-            builder.Services.AddRazorPages();	
-		    builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(config.RedisConnectionString));
-            builder.Services.AddScoped<IStorageService, RedisStorageService>();
+        builder.Services.AddSingleton<IMessageBrokerService>(_ => rabbitMqService);
 
-		    var app = builder.Build();
+        // Add services to the container.
+        builder.Services.AddRazorPages();
+        builder.Services.AddScoped<IStorageService, RedisStorageService>();
 
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Error");
-            }
-            app.UseStaticFiles();
+        var app = builder.Build();
 
-            app.UseRouting();
-
-            app.UseAuthorization();
-
-            app.MapRazorPages();
-
-            app.Run();
-        }
-
-        private static async Task<ValuatorRabbitMqService> GetRabbitMqServiceAsync(EnvironmentConfiguration config)
+        // Configure the HTTP request pipeline.
+        if (!app.Environment.IsDevelopment())
         {
-	        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname);
-	        var rabbitMqService = new ValuatorRabbitMqService(rabbitMqClient, config.LoggerRabbitMqExchangeName);
-	        await rabbitMqService.DeclareTopologyAsync(config.RankCalculatorRabbitMqExchangeName, config.RankCalculatorRabbitMqQueueName);
-
-	        return rabbitMqService;
+            app.UseExceptionHandler("/Error");
         }
+
+        app.UseStaticFiles();
+
+        app.UseRouting();
+
+        app.UseAuthorization();
+
+        app.MapRazorPages();
+
+        app.Run();
+    }
+
+    private static async Task<ValuatorRabbitMqService> GetRabbitMqServiceAsync(EnvironmentConfiguration config)
+    {
+        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname);
+        var rabbitMqService = new ValuatorRabbitMqService(rabbitMqClient, config.LoggerRabbitMqExchangeName);
+        await rabbitMqService.DeclareTopologyAsync(config.RankCalculatorRabbitMqExchangeName,
+            config.RankCalculatorRabbitMqQueueName);
+
+        return rabbitMqService;
+    }
 }

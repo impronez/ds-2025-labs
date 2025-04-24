@@ -11,7 +11,7 @@ public class Program
     {
         var config = new EnvironmentConfiguration();
         
-        var storageService = GetStorageService(config.RedisConnectionString);
+        var storageService = new RedisStorageService();
 
         var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname);
         var rabbitMqService = new RankCalculatorRabbitMqService(rabbitMqClient, config.LoggerRabbitMqExchangeName);
@@ -38,12 +38,5 @@ public class Program
         };
 
         await exitEvent.Task;
-    }
-
-    private static RedisStorageService GetStorageService(string connectionString)
-    {
-        var multiplexer = ConnectionMultiplexer.Connect(connectionString);
-
-        return new RedisStorageService(multiplexer);
     }
 }
