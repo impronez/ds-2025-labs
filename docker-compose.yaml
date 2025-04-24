@@ -1,9 +1,41 @@
 services:
-  redis:
+  redis-main:
     image: redis:alpine
-    container_name: redisValuator
+    container_name: redisValuatorMain
+    volumes:
+      - redis-main-data:/data
     ports:
       - 6379:6379
+    networks:
+      - app-network
+        
+  redis-ru:
+    image: redis:alpine
+    container_name: redisValuatorRu
+    volumes:
+      - redis-ru-data:/data
+    ports:
+      - 6380:6379
+    networks:
+      - app-network
+  
+  redis-eu:
+    image: redis:alpine
+    container_name: redisValuatorEu
+    volumes:
+      - redis-eu-data:/data
+    ports:
+      - 6381:6379
+    networks:
+      - app-network
+        
+  redis-asia:
+    image: redis:alpine
+    container_name: redisValuatorAsia
+    volumes:
+      - redis-asia-data:/data
+    ports:
+      - 6382:6379
     networks:
       - app-network
 
@@ -20,7 +52,10 @@ services:
       context: .
       dockerfile: RankCalculator/Dockerfile
     depends_on:
-      - redis
+      - redis-main
+      - redis-ru
+      - redis-eu
+      - redis-asia
       - rabbitmq
     env_file:
       - .env
@@ -32,7 +67,10 @@ services:
       context: .
       dockerfile: EventsLogger/Dockerfile
     depends_on:
-      - redis
+      - redis-main
+      - redis-ru
+      - redis-eu
+      - redis-asia
       - rabbitmq
     env_file:
       - .env
@@ -44,7 +82,10 @@ services:
       context: .
       dockerfile: EventsLogger/Dockerfile
     depends_on:
-      - redis
+      - redis-main
+      - redis-ru
+      - redis-eu
+      - redis-asia
       - rabbitmq
     env_file:
       - .env
@@ -58,7 +99,10 @@ services:
       context: .
       dockerfile: Valuator/Dockerfile
     depends_on:
-      - redis
+      - redis-main
+      - redis-ru
+      - redis-eu
+      - redis-asia
       - rabbitmq
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
@@ -77,7 +121,10 @@ services:
       context: .
       dockerfile: Valuator/Dockerfile
     depends_on:
-      - redis
+      - redis-main
+      - redis-ru
+      - redis-eu
+      - redis-asia
       - rabbitmq
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
@@ -103,6 +150,10 @@ services:
 
 volumes:
   data-protection-keys:
+  redis-main-data:
+  redis-ru-data:
+  redis-eu-data:
+  redis-asia-data:
 
 networks:
   app-network:
