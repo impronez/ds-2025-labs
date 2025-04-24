@@ -9,19 +9,19 @@ namespace Valuator.Pages;
 public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
-    private readonly IStorageService _redisService;
+    private readonly IStorageService _storageService;
     private readonly IMessageBrokerService _messageBrokerService;
     private readonly EnvironmentConfiguration _envConfig;
     
     public IndexModel(
 	    ILogger<IndexModel> logger,
-	    IStorageService redisService,
+	    IStorageService storageService,
 	    IMessageBrokerService messageBrokerService,
 	    IConfiguration configuration,
 	    EnvironmentConfiguration environmentConfiguration)
     {
         _logger = logger;
-        _redisService = redisService;
+        _storageService = storageService;
         _messageBrokerService = messageBrokerService;
         _envConfig = environmentConfiguration;
     }
@@ -31,36 +31,44 @@ public class IndexModel : PageModel
 
     }
 
-    public async Task<IActionResult> OnPost(string text)
+    public async Task<IActionResult> OnPost(string text, string country)
     {
-        _logger.LogDebug(text);
-
-        if (String.IsNullOrEmpty(text))
+        _logger.LogDebug($"{text} to {country}");
+        
+        if (string.IsNullOrEmpty(text))
         {
 			return Redirect("index");
 		}
 
+        if (string.IsNullOrEmpty(country))
+        {
+	        Console.WriteLine($"Invalid shard key: {country}");
+	        return Redirect("index");
+        }
+        
 		var id = Guid.NewGuid().ToString();
+		_storageService.SaveShardKey(id, country);
 
 		var similarityKey = "SIMILARITY-" + id;
-		var similarity = HasDuplicates(text) ? "1" : "0";
-		_redisService.Save(similarityKey, similarity);
+		var similarity = HasDuplicates(text, country) ? "1" : "0";
+		
+		_storageService.SaveByShardKey(similarityKey, similarity, country);
 
 		var textKey = "TEXT-" + id;
-        _redisService.Save(textKey, text);
+        _storageService.SaveByShardKey(textKey, text, country);
         
         await _messageBrokerService.SendMessageAsync(string.Empty, _envConfig.RankCalculatorRabbitMqQueueName, id);
 
         var message = $"Id: {id}, similarity: {similarity}";
         await _messageBrokerService.SendMessageAsync(_envConfig.LoggerRabbitMqExchangeName, _envConfig.SimilarityCalculatedRoutingKey, message);
-
+        
 		return Redirect($"summary?id={id}");
     }
 
-	private bool HasDuplicates(string text)
+	private bool HasDuplicates(string text, string shardKey)
     {
-        return _redisService
-            .GetAllValuesByKeyPrefix("TEXT")
+        return _storageService
+            .GetAllValuesByKeyPrefix("TEXT", shardKey)
 			.Exists(value => text == value);
     }
 }

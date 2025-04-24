@@ -6,11 +6,36 @@
 
 <div class="text-center">
     <form method="post">
-        <div class="col-2">Текст для оценки:</div>
-        <div class="col-10">
-            <textarea name="text" rows="5" cols="50"
-                oninput="document.getElementById('submit-btn').disabled = this.value.trim() === ''" ></textarea>
-            <input type="submit" disabled id="submit-btn" />
+        <div>
+            <div class="row">
+                <div class="col-2">Страна гражданства:</div>
+                <div class="col-2">
+                    <select name="country" class="form-control" id="country-select" onchange="checkForm()">
+                        <option value="">Выберите страну</option>
+                        <option value="RU">Россия</option>
+                        <option value="EU">Франция</option>
+                        <option value="EU">Германия</option>
+                        <option value="Asia">ОАЭ</option>
+                        <option value="Asia">Индия</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-2">Текст для оценки:</div>
+                <div class="col-5">
+                <textarea name="text" rows="5" cols="50" id="text-input"
+                          oninput="checkForm()"></textarea>
+                    <input type="submit" disabled id="submit-btn"/>
+                </div>
+            </div>
         </div>
     </form>
 </div>
+
+<script>
+    function checkForm() {
+        const countrySelected = document.getElementById('country-select').value !== '';
+        const textEntered = document.getElementById('text-input').value.trim() !== '';
+        document.getElementById('submit-btn').disabled = !(countrySelected && textEntered);
+    }
+</script>

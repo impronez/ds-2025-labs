@@ -6,12 +6,12 @@ namespace Valuator.Pages;
 public class SummaryModel : PageModel
 {
     private readonly ILogger<SummaryModel> _logger;
-    private readonly IStorageService _redisService;
+    private readonly IStorageService _storageService;
 
-    public SummaryModel(ILogger<SummaryModel> logger, IStorageService redisService)
+    public SummaryModel(ILogger<SummaryModel> logger, IStorageService storageService)
     {
         _logger = logger;
-        _redisService = redisService;
+        _storageService = storageService;
     }
 
     public double Rank { get; set; }
@@ -23,8 +23,8 @@ public class SummaryModel : PageModel
     {
         _logger.LogDebug(id);
         
-        var rankValue = _redisService.GetValue($"RANK-{id}");
-        var similarityValue = _redisService.GetValue($"SIMILARITY-{id}");
+        var rankValue = _storageService.GetById(id, $"RANK-{id}");
+        var similarityValue = _storageService.GetById(id, $"SIMILARITY-{id}");
 
         if (!ParseValues(rankValue, similarityValue))
             return;

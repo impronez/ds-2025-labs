@@ -25,12 +25,12 @@ public class RankCalculatorService
     
     public async Task Process(string id)
     {
-        var text = _storageService.GetValue(TextPrefix + id);
+        var text = _storageService.GetById(id, $"{TextPrefix}{id}");
         
         var rank = CalculateRank(text);
         var key = RankPrefix + id;
 
-        SaveRank(key, rank);
+        SaveRank(key, rank, id);
 
         var message = $"Id: {id}, rank: {rank}";
         await _rabbitMqService.SendMessageAsync(
@@ -39,9 +39,9 @@ public class RankCalculatorService
             message);
     }
 
-    private void SaveRank(string key, double value)
+    private void SaveRank(string key, double value, string id)
     {
-        _storageService.Save(key, value.ToString(CultureInfo.InvariantCulture));
+        _storageService.SaveById(key, value.ToString(CultureInfo.InvariantCulture), id);
     }
     
     private static double CalculateRank(string? text)
