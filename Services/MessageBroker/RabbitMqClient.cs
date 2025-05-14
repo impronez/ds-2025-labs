@@ -1,4 +1,5 @@
 using Polly;
+using Polly.Retry;
 using RabbitMQ.Client;
 
 namespace Services.MessageBroker;
@@ -14,23 +15,25 @@ public class RabbitMqClient : IAsyncDisposable
         Channel = channel;
     }
 
-    public static async Task<RabbitMqClient> CreateAsync(string hostname)
+    public static async Task<RabbitMqClient> CreateAsync(string hostname, string userName, string password)
     {
-        var retryPolicy = Policy
+        AsyncRetryPolicy? retryPolicy = Policy
             .Handle<Exception>()
             .WaitAndRetryAsync(
                 retryCount: 5,
                 sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
-        
+
         return await retryPolicy.ExecuteAsync(async () =>
         {
             var factory = new ConnectionFactory
             {
-                HostName = hostname
+                HostName = hostname,
+                UserName = userName,
+                Password = password
             };
 
-            var connection = await factory.CreateConnectionAsync();
-            var channel = await connection.CreateChannelAsync();
+            IConnection connection = await factory.CreateConnectionAsync();
+            IChannel channel = await connection.CreateChannelAsync();
 
             return new RabbitMqClient(connection, channel);
         });

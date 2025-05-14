@@ -1,0 +1,33 @@
+@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Регистрация";
+    string errorMessage = string.Empty;
+
+    if (!ModelState.IsValid && ModelState.ErrorCount > 0)
+    {
+        errorMessage = string.Join("\\n", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+    }
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form method="post">
+    <div class="form-group">
+        <label for="username">Логин</label>
+        <input type="text" id="username" name="Username" class="form-control w-25" required />
+    </div>
+    <div class="form-group">
+        <label for="password">Пароль</label>
+        <input type="password" id="password" name="Password" class="form-control w-25" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+</form>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <script>
+        const errorMessage = '@errorMessage';
+        alert("Ошибка: \n" + errorMessage.replace(/\\n/g, '\n'));
+    </script>
+}

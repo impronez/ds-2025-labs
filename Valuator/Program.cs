@@ -1,4 +1,4 @@
-﻿using StackExchange.Redis;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Services.Common;
 using Services.MessageBroker;
 using Services.Storage;
@@ -8,25 +8,33 @@ namespace Valuator;
 
 public class Program
 {
-        public static async Task Main(string[] args)
-        {
-	        var config = new EnvironmentConfiguration();
-	        
-            var builder = WebApplication.CreateBuilder(args);
+    public static async Task Main(string[] args)
+    {
+        var config = new EnvironmentConfiguration();
+
+        var builder = WebApplication.CreateBuilder(args);
 
         var rabbitMqService = await GetRabbitMqServiceAsync(config);
+        var redisStorageService = new RedisStorageService(config.RedisPassword);
+        var redisUserStorageService = new RedisUserStorageService(config.RedisPassword);
 
         builder.Services.AddSingleton(config);
 
         builder.Services.AddSingleton<IMessageBrokerService>(_ => rabbitMqService);
+        builder.Services.AddScoped<IStorageService>(_ => redisStorageService);
+        builder.Services.AddScoped<IUserStorageService>(_ => redisUserStorageService);
 
-        // Add services to the container.
         builder.Services.AddRazorPages();
-        builder.Services.AddScoped<IStorageService, RedisStorageService>();
+        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(options =>
+            {
+                options.LoginPath = "/Login";  // Путь, на который будет перенаправляться неавторизованный пользователь
+                options.LogoutPath = "/Logout"; // Путь для выхода
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);  // Время жизни куки
+            });
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");
@@ -36,16 +44,18 @@ public class Program
 
         app.UseRouting();
 
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapRazorPages();
+        app.MapDefaultControllerRoute();
 
         app.Run();
     }
 
     private static async Task<ValuatorRabbitMqService> GetRabbitMqServiceAsync(EnvironmentConfiguration config)
     {
-        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname);
+        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname, config.RabbitMqUsername, config.RabbitMqPassword);
         var rabbitMqService = new ValuatorRabbitMqService(rabbitMqClient, config.LoggerRabbitMqExchangeName);
         await rabbitMqService.DeclareTopologyAsync(config.RankCalculatorRabbitMqExchangeName,
             config.RankCalculatorRabbitMqQueueName);

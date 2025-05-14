@@ -11,9 +11,9 @@ public class Program
     {
         var config = new EnvironmentConfiguration();
         
-        var storageService = new RedisStorageService();
+        var storageService = new RedisStorageService(config.RedisPassword);
 
-        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname);
+        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname, config.RabbitMqUsername, config.RabbitMqPassword);
         var rabbitMqService = new RankCalculatorRabbitMqService(rabbitMqClient, config.LoggerRabbitMqExchangeName);
         await rabbitMqService.DeclareTopologyAsync(config.RankCalculatorRabbitMqExchangeName, config.RankCalculatorRabbitMqQueueName);
 

@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc.RazorPages;
-using Services;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Services.Storage;
 
 namespace Valuator.Pages;
+
+[Authorize]
 public class SummaryModel : PageModel
 {
     private readonly ILogger<SummaryModel> _logger;
@@ -21,6 +24,21 @@ public class SummaryModel : PageModel
 
     public void OnGet(string id)
     {
+        string? username = User.Identity.Name;
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userId))
+        {
+            Error = "Ошибка авторизации";
+            return;
+        }
+
+        string? userIdByText = _storageService.GetById(id, $"USER-{id}");
+        if (userIdByText != userId)
+        {
+            Error = "Ошибка доступа! Ваш ID не совпадает с пользовательским ID текста";
+            return;
+        }
+        
         _logger.LogDebug(id);
         
         var rankValue = _storageService.GetById(id, $"RANK-{id}");

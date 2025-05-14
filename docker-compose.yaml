@@ -1,49 +1,56 @@
+x-redis-common: &redis-common
+  build:
+    context: ./infrastructure/redis/
+  image: redis:alpine
+  container_name: redisValuator
+  environment:
+    REDIS_PASSWORD: ${REDIS_PASSWORD}
+  volumes:
+    - redis-main-data:/data
+  networks:
+    - app-network
+
 services:
   redis-main:
-    image: redis:alpine
+    <<: *redis-common
     container_name: redisValuatorMain
-    volumes:
-      - redis-main-data:/data
     ports:
       - 6379:6379
-    networks:
-      - app-network
-        
+
   redis-ru:
-    image: redis:alpine
+    <<: *redis-common
     container_name: redisValuatorRu
-    volumes:
-      - redis-ru-data:/data
     ports:
       - 6380:6379
-    networks:
-      - app-network
-  
+
   redis-eu:
-    image: redis:alpine
+    <<: *redis-common
     container_name: redisValuatorEu
-    volumes:
-      - redis-eu-data:/data
     ports:
       - 6381:6379
-    networks:
-      - app-network
-        
+
   redis-asia:
-    image: redis:alpine
+    <<: *redis-common
     container_name: redisValuatorAsia
-    volumes:
-      - redis-asia-data:/data
     ports:
       - 6382:6379
-    networks:
-      - app-network
+  
+  redis-users:
+    <<: *redis-common
+    container_name: redisValuatorUsers
+    ports:
+      - 6383:6379
 
   rabbitmq:
-    image: rabbitmq:3.12-management
+    build:
+      context: ./infrastructure/rabbitmq
     container_name: rabbitmq
     ports:
       - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
     networks:
       - app-network
     
@@ -139,7 +146,7 @@ services:
   nginx:
     image: nginx:latest
     volumes:
-      - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - webapp1
       - webapp2

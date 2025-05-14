@@ -1,19 +1,26 @@
+using Services.Storage;
+
 namespace Services.Common;
 
 public class EnvironmentConfiguration
 {
     public string RabbitMqHostname { get; }
+    public string RabbitMqUsername { get; }
+    public string RabbitMqPassword { get; }
     public string RankCalculatorRabbitMqQueueName { get; }
     public string RankCalculatorRabbitMqExchangeName { get; }
     public string LoggerRabbitMqExchangeName { get; }
     public string LoggerRabbitMqQueueName { get; }
     public string RankCalculatedRoutingKey { get; }
     public string SimilarityCalculatedRoutingKey { get; }
+    public string RedisPassword { get; }
     
     public EnvironmentConfiguration()
     {
         RabbitMqHostname = GetRequiredEnvironmentVariable("RABBITMQ_HOSTNAME");
-        
+        RabbitMqUsername = GetRequiredEnvironmentVariable("RABBITMQ_USER");
+        RabbitMqPassword = GetRequiredEnvironmentVariable("RABBITMQ_PASSWORD");
+
         RankCalculatorRabbitMqQueueName = GetRequiredEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_QUEUE_NAME");
         RankCalculatorRabbitMqExchangeName = GetRequiredEnvironmentVariable("RANK_CALCULATOR_RABBIT_MQ_EXCHANGE_NAME");
         LoggerRabbitMqExchangeName = GetRequiredEnvironmentVariable("LOGGER_RABBIT_MQ_EXCHANGE_NAME");
@@ -21,6 +28,8 @@ public class EnvironmentConfiguration
         
         RankCalculatedRoutingKey = GetRequiredEnvironmentVariable("RANK_CALCULATED_ROUTING_KEY");
         SimilarityCalculatedRoutingKey = GetRequiredEnvironmentVariable("SIMILARITY_CALCULATED_ROUTING_KEY");
+
+        RedisPassword = GetRequiredEnvironmentVariable("REDIS_PASSWORD");
     }
 
     public static string GetRedisConnectionString(string shardKey)

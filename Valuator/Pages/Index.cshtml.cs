@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Services.Common;
@@ -6,6 +8,7 @@ using Valuator.Services;
 
 namespace Valuator.Pages;
 
+[Authorize]
 public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
@@ -28,7 +31,6 @@ public class IndexModel : PageModel
 
     public void OnGet()
     {
-
     }
 
     public async Task<IActionResult> OnPost(string text, string country)
@@ -46,23 +48,36 @@ public class IndexModel : PageModel
 	        return Redirect("index");
         }
         
-		var id = Guid.NewGuid().ToString();
-		_storageService.SaveShardKey(id, country);
+        string? username = User.Identity.Name;
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userId))
+        {
+	        Console.WriteLine($"Not authorized");
+	        return Redirect("index"); 
+        }
+        
+        
+        
+		string textId = Guid.NewGuid().ToString();
+		_storageService.SaveShardKey(textId, country);
+		
+		string userKey = "USER-" + textId;
+		_storageService.SaveByShardKey(userKey, userId, country);
 
-		var similarityKey = "SIMILARITY-" + id;
-		var similarity = HasDuplicates(text, country) ? "1" : "0";
+		string similarityKey = "SIMILARITY-" + textId;
+		string similarity = HasDuplicates(text, country) ? "1" : "0";
 		
 		_storageService.SaveByShardKey(similarityKey, similarity, country);
 
-		var textKey = "TEXT-" + id;
+		string textKey = "TEXT-" + textId;
         _storageService.SaveByShardKey(textKey, text, country);
         
-        await _messageBrokerService.SendMessageAsync(string.Empty, _envConfig.RankCalculatorRabbitMqQueueName, id);
+        await _messageBrokerService.SendMessageAsync(string.Empty, _envConfig.RankCalculatorRabbitMqQueueName, textId);
 
-        var message = $"Id: {id}, similarity: {similarity}";
+        string message = $"Id: {textId}, similarity: {similarity}";
         await _messageBrokerService.SendMessageAsync(_envConfig.LoggerRabbitMqExchangeName, _envConfig.SimilarityCalculatedRoutingKey, message);
         
-		return Redirect($"summary?id={id}");
+		return Redirect($"summary?id={textId}");
     }
 
 	private bool HasDuplicates(string text, string shardKey)

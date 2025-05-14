@@ -12,7 +12,7 @@ class Program
     {
         var config = new EnvironmentConfiguration();
 
-        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname);
+        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname, config.RabbitMqUsername, config.RabbitMqPassword);
         
         await DeclareTopologyAsync(rabbitMqClient,
             config.LoggerRabbitMqExchangeName,
