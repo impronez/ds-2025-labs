@@ -1,13 +1,28 @@
+﻿using StackExchange.Redis;
+using Services.Common;
+using Services.MessageBroker;
+using Services.Storage;
+using Valuator.Services;
+
 namespace Valuator;
 
 public class Program
 {
-    public static void Main(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
+        public static async Task Main(string[] args)
+        {
+	        var config = new EnvironmentConfiguration();
+	        
+            var builder = WebApplication.CreateBuilder(args);
+
+        var rabbitMqService = await GetRabbitMqServiceAsync(config);
+
+        builder.Services.AddSingleton(config);
+
+        builder.Services.AddSingleton<IMessageBrokerService>(_ => rabbitMqService);
 
         // Add services to the container.
         builder.Services.AddRazorPages();
+        builder.Services.AddScoped<IStorageService, RedisStorageService>();
 
         var app = builder.Build();
 
@@ -16,6 +31,7 @@ public class Program
         {
             app.UseExceptionHandler("/Error");
         }
+
         app.UseStaticFiles();
 
         app.UseRouting();
@@ -25,5 +41,15 @@ public class Program
         app.MapRazorPages();
 
         app.Run();
+    }
+
+    private static async Task<ValuatorRabbitMqService> GetRabbitMqServiceAsync(EnvironmentConfiguration config)
+    {
+        var rabbitMqClient = await RabbitMqClient.CreateAsync(config.RabbitMqHostname);
+        var rabbitMqService = new ValuatorRabbitMqService(rabbitMqClient, config.LoggerRabbitMqExchangeName);
+        await rabbitMqService.DeclareTopologyAsync(config.RankCalculatorRabbitMqExchangeName,
+            config.RankCalculatorRabbitMqQueueName);
+
+        return rabbitMqService;
     }
 }

@@ -1,15 +1,29 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Services.Common;
+using Services.Storage;
+using Valuator.Services;
 
 namespace Valuator.Pages;
 
 public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
-
-    public IndexModel(ILogger<IndexModel> logger)
+    private readonly IStorageService _storageService;
+    private readonly IMessageBrokerService _messageBrokerService;
+    private readonly EnvironmentConfiguration _envConfig;
+    
+    public IndexModel(
+	    ILogger<IndexModel> logger,
+	    IStorageService storageService,
+	    IMessageBrokerService messageBrokerService,
+	    IConfiguration configuration,
+	    EnvironmentConfiguration environmentConfiguration)
     {
         _logger = logger;
+        _storageService = storageService;
+        _messageBrokerService = messageBrokerService;
+        _envConfig = environmentConfiguration;
     }
 
     public void OnGet()
@@ -17,21 +31,44 @@ public class IndexModel : PageModel
 
     }
 
-    public IActionResult OnPost(string text)
+    public async Task<IActionResult> OnPost(string text, string country)
     {
-        _logger.LogDebug(text);
+        _logger.LogDebug($"{text} to {country}");
+        
+        if (string.IsNullOrEmpty(text))
+        {
+			return Redirect("index");
+		}
 
-        string id = Guid.NewGuid().ToString();
+        if (string.IsNullOrEmpty(country))
+        {
+	        Console.WriteLine($"Invalid shard key: {country}");
+	        return Redirect("index");
+        }
+        
+		var id = Guid.NewGuid().ToString();
+		_storageService.SaveShardKey(id, country);
 
-        string textKey = "TEXT-" + id;
-        // TODO: (pa1) сохранить в БД (Redis) text по ключу textKey
+		var similarityKey = "SIMILARITY-" + id;
+		var similarity = HasDuplicates(text, country) ? "1" : "0";
+		
+		_storageService.SaveByShardKey(similarityKey, similarity, country);
 
-        string rankKey = "RANK-" + id;
-        // TODO: (pa1) посчитать rank и сохранить в БД (Redis) по ключу rankKey
+		var textKey = "TEXT-" + id;
+        _storageService.SaveByShardKey(textKey, text, country);
+        
+        await _messageBrokerService.SendMessageAsync(string.Empty, _envConfig.RankCalculatorRabbitMqQueueName, id);
 
-        string similarityKey = "SIMILARITY-" + id;
-        // TODO: (pa1) посчитать similarity и сохранить в БД (Redis) по ключу similarityKey
+        var message = $"Id: {id}, similarity: {similarity}";
+        await _messageBrokerService.SendMessageAsync(_envConfig.LoggerRabbitMqExchangeName, _envConfig.SimilarityCalculatedRoutingKey, message);
+        
+		return Redirect($"summary?id={id}");
+    }
 
-        return Redirect($"summary?id={id}");
+	private bool HasDuplicates(string text, string shardKey)
+    {
+        return _storageService
+            .GetAllValuesByKeyPrefix("TEXT", shardKey)
+			.Exists(value => text == value);
     }
 }

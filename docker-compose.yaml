@@ -1,0 +1,160 @@
+services:
+  redis-main:
+    image: redis:alpine
+    container_name: redisValuatorMain
+    volumes:
+      - redis-main-data:/data
+    ports:
+      - 6379:6379
+    networks:
+      - app-network
+        
+  redis-ru:
+    image: redis:alpine
+    container_name: redisValuatorRu
+    volumes:
+      - redis-ru-data:/data
+    ports:
+      - 6380:6379
+    networks:
+      - app-network
+  
+  redis-eu:
+    image: redis:alpine
+    container_name: redisValuatorEu
+    volumes:
+      - redis-eu-data:/data
+    ports:
+      - 6381:6379
+    networks:
+      - app-network
+        
+  redis-asia:
+    image: redis:alpine
+    container_name: redisValuatorAsia
+    volumes:
+      - redis-asia-data:/data
+    ports:
+      - 6382:6379
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+    networks:
+      - app-network
+    
+  rank-calculator: 
+    build:
+      context: .
+      dockerfile: RankCalculator/Dockerfile
+    depends_on:
+      - redis-main
+      - redis-ru
+      - redis-eu
+      - redis-asia
+      - rabbitmq
+    env_file:
+      - .env
+    networks:
+      - app-network
+    
+  events-logger1:
+    build:
+      context: .
+      dockerfile: EventsLogger/Dockerfile
+    depends_on:
+      - redis-main
+      - redis-ru
+      - redis-eu
+      - redis-asia
+      - rabbitmq
+    env_file:
+      - .env
+    networks:
+      - app-network
+  
+  events-logger2:
+    build:
+      context: .
+      dockerfile: EventsLogger/Dockerfile
+    depends_on:
+      - redis-main
+      - redis-ru
+      - redis-eu
+      - redis-asia
+      - rabbitmq
+    env_file:
+      - .env
+    networks:
+      - app-network
+  
+  webapp1:
+    volumes:
+      - data-protection-keys:/root/.aspnet/DataProtection-Keys
+    build:
+      context: .
+      dockerfile: Valuator/Dockerfile
+    depends_on:
+      - redis-main
+      - redis-ru
+      - redis-eu
+      - redis-asia
+      - rabbitmq
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5001
+    ports:
+      - "5001:5001"
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+  webapp2:
+    volumes:
+      - data-protection-keys:/root/.aspnet/DataProtection-Keys
+    build:
+      context: .
+      dockerfile: Valuator/Dockerfile
+    depends_on:
+      - redis-main
+      - redis-ru
+      - redis-eu
+      - redis-asia
+      - rabbitmq
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5002
+    ports:
+      - "5002:5002"
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - webapp1
+      - webapp2
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network  
+
+volumes:
+  data-protection-keys:
+  redis-main-data:
+  redis-ru-data:
+  redis-eu-data:
+  redis-asia-data:
+
+networks:
+  app-network:
+    driver: bridge
