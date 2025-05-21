@@ -56,8 +56,6 @@ public class IndexModel : PageModel
 	        return Redirect("index"); 
         }
         
-        
-        
 		string textId = Guid.NewGuid().ToString();
 		_storageService.SaveShardKey(textId, country);
 		

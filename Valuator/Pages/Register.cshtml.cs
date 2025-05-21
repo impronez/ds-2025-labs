@@ -23,8 +23,6 @@ public class RegisterModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(string username, string password)
     {
-        Console.WriteLine($"username: {username}, Password: {password}");
-        
         if (!ModelState.IsValid || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
             ModelState.AddModelError(string.Empty, "Username and password are required.");

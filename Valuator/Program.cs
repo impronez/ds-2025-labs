@@ -28,9 +28,9 @@ public class Program
         builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
             {
-                options.LoginPath = "/Login";  // Путь, на который будет перенаправляться неавторизованный пользователь
-                options.LogoutPath = "/Logout"; // Путь для выхода
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);  // Время жизни куки
+                options.LoginPath = "/Login";
+                options.LogoutPath = "/Logout";
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
             });
 
         var app = builder.Build();

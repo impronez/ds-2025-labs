@@ -53,7 +53,6 @@ public class RedisUserStorageService : IUserStorageService
         return user;
     }
 
-
     public async Task<User> CreateAsync(string userName, string password)
     {
         var user = new User
@@ -73,12 +72,6 @@ public class RedisUserStorageService : IUserStorageService
         await _database.HashSetAsync(redisKey, hashEntries);
 
         return user;
-    }
-
-    public bool VerifyPassword(User user, string password)
-    {
-        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
-        return result == PasswordVerificationResult.Success;
     }
     
     private static string GetRedisKey(string username) => $"user:login:{username}";
