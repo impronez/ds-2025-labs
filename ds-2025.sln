@@ -10,6 +10,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Servic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventsLogger", "EventsLogger\EventsLogger.csproj", "{BA00F9E5-2485-48B3-8484-C75AE49DF5E8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FE48EDAD-8597-4128-A236-64D749DD1929}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankCalculator.Tests", "RankCalculator.Tests\RankCalculator.Tests.csproj", "{DA05B5C9-3401-430C-AB26-B1EC03088C59}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Specs", "System.Specs\System.Specs.csproj", "{E4C2EB76-0B03-436C-8C73-892C56AFF19F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,11 +38,23 @@ Global
 		{BA00F9E5-2485-48B3-8484-C75AE49DF5E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA00F9E5-2485-48B3-8484-C75AE49DF5E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA00F9E5-2485-48B3-8484-C75AE49DF5E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA05B5C9-3401-430C-AB26-B1EC03088C59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA05B5C9-3401-430C-AB26-B1EC03088C59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA05B5C9-3401-430C-AB26-B1EC03088C59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA05B5C9-3401-430C-AB26-B1EC03088C59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4C2EB76-0B03-436C-8C73-892C56AFF19F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4C2EB76-0B03-436C-8C73-892C56AFF19F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4C2EB76-0B03-436C-8C73-892C56AFF19F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4C2EB76-0B03-436C-8C73-892C56AFF19F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4E720F55-C9D3-44BC-AFC1-5F0DEFF3FB93}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DA05B5C9-3401-430C-AB26-B1EC03088C59} = {FE48EDAD-8597-4128-A236-64D749DD1929}
+		{E4C2EB76-0B03-436C-8C73-892C56AFF19F} = {FE48EDAD-8597-4128-A236-64D749DD1929}
 	EndGlobalSection
 EndGlobal

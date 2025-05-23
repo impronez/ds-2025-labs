@@ -100,10 +100,27 @@ services:
       - "8080:8080"
     networks:
       - app-network  
+  
+  e2e-tests:
+    build:
+      context: .
+      dockerfile: System.Specs/Dockerfile
+    depends_on:
+      - webapp1
+      - webapp2
+      - redis
+      - rabbitmq
+      - nginx
+    networks:
+      - app-network
+    shm_size: 2g
+    environment:
+      - BASE_URL=http://nginx:8080
+    command: [ "/wait-for-it.sh", "nginx:8080", "--", "dotnet", "test", "--logger:trx" ]
 
 volumes:
   data-protection-keys:
 
 networks:
   app-network:
-    driver: bridge
+    external: true

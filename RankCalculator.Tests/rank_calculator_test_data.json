@@ -1,0 +1,10 @@
+[
+  { "Input": null, "Expected": 0.0 },
+  { "Input": "", "Expected": 0.0 },
+  { "Input": "  \n  ", "Expected": 0.0 },
+  { "Input": "abc", "Expected": 0.0 },
+  { "Input": "123", "Expected": 1.0 },
+  { "Input": "a!b@c", "Expected": 0.4 },
+  { "Input": "🙂a🙃b", "Expected": 0.5 },
+  { "Input": "🧑‍💻", "Expected": 1.0 }
+]

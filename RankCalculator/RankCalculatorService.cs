@@ -38,16 +38,28 @@ public class RankCalculatorService
             _envConfig.RankCalculatedRoutingKey,
             message);
     }
+    
+    public static double CalculateRank(string? text)
+    {
+        Console.WriteLine($"Text: {text}");
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return 0;
+        }
+
+        StringInfo stringInfo = new StringInfo(text);
+        int total = stringInfo.LengthInTextElements;
+
+        int nonLetterCount = Enumerable
+            .Range(0, total)
+            .Select(i => stringInfo.SubstringByTextElements(i, 1))
+            .Count(element => !element.Any(char.IsLetter));
+        Console.WriteLine($"total: {total}, non-letter count: {nonLetterCount}");
+        return (double)nonLetterCount / total;
+    }
 
     private void SaveRank(string key, double value)
     {
         _storageService.Save(key, value.ToString(CultureInfo.InvariantCulture));
-    }
-    
-    private static double CalculateRank(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return 0;
-        
-        return text.Count(ch => !char.IsLetter(ch)) / (double)text.Length;
     }
 }
